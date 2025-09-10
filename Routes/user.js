@@ -1,7 +1,7 @@
 import express from "express";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
-import Member from "../models/Member.js";
+import Member from "../models/member.js";
 import multer from "multer";
 import XLSX from "xlsx";
 
