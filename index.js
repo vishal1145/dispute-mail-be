@@ -1,5 +1,5 @@
 import express from "express";
-import userRoutes from "./routes/user.js";
+import userRoutes from "../routes/user.js";
 import connectDB from "./routes/server.js"; // renamed to db.js
 import cors from "cors";
 // import ExcelUpload from "./Routes/uploadExcel.js"
@@ -7,7 +7,11 @@ import cors from "cors";
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: '*', // allow all origins
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
