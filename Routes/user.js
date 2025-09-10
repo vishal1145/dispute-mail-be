@@ -5,7 +5,6 @@ import Member from "../models/member.js";
 import multer from "multer";
 import XLSX from "xlsx";
 
-
 dotenv.config();
 const router = express.Router();
 
@@ -136,46 +135,57 @@ router.post("/excel-upload", upload.single("excel_file"), async (req, res) => {
 });
 
 // ✅ Send Email API
-router.put("/send-email/:id", async (req, res) => {
+router.put("/send-email", async (req, res) => {
   try {
-    const { id } = req.params;
+    // Find all members who haven't been sent an email yet (or you can apply other filters)
+    const members = await Member.find({ email_sent: false });
 
-    // Find the member by ID
-    const member = await Member.findById(id);
-    if (!member) {
-      return res.status(404).json({ message: "Member not found" });
+    if (members.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No members found to send emails to." });
     }
 
     // Setup nodemailer transporter
     let transporter = nodemailer.createTransport({
-      service: "gmail", // or other email service like SendGrid, etc.
+      service: "gmail",
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
     });
 
-    // Email options
-    let mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: member.email,
-      subject: "Important Message",
-      text: `Hello ${member.name},\n\nThis is a message from your team.`,
-      // html: "<p>Hello...</p>" // Optional for HTML content
-    };
+    let emailsSent = 0;
+    let errors = [];
 
-    // Send the email
-    await transporter.sendMail(mailOptions);
+    for (const member of members) {
+      let mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: member.email,
+        subject: "Important Message",
+        text: `Hello ${member.name},\n\nThis is a message from your team.`,
+      };
 
-    // Update email_sent field
-    member.email_sent = true;
-    await member.save();
+      try {
+        await transporter.sendMail(mailOptions);
+
+        // Update email_sent field after successful email
+        member.email_sent = true;
+        await member.save();
+
+        emailsSent++;
+      } catch (emailError) {
+        console.error(`Error sending email to ${member.email}:`, emailError);
+        errors.push({ email: member.email, error: emailError.message });
+      }
+    }
+
     res.json({
-      message: "Email sent successfully and status updated",
-      data: member,
+      message: `Bulk email process completed. Emails sent: ${emailsSent}`,
+      errors: errors.length ? errors : null,
     });
   } catch (error) {
-    console.error("Error sending email:", error);
+    console.error("Server error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
