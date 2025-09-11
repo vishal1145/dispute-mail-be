@@ -5,6 +5,7 @@ import Member from "../models/member.js";
 import multer from "multer";
 import XLSX from "xlsx";
 
+
 dotenv.config();
 const router = express.Router();
 
@@ -134,19 +135,10 @@ router.post("/excel-upload", upload.single("excel_file"), async (req, res) => {
   }
 });
 
-// ✅ Send Email API
 router.put("/send-email", async (req, res) => {
   try {
-    // Find all members who haven't been sent an email yet (or you can apply other filters)
-    const members = await Member.find({ email_sent: false });
+    const { data } = req.body;
 
-    if (members.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No members found to send emails to." });
-    }
-
-    // Setup nodemailer transporter
     let transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -155,39 +147,50 @@ router.put("/send-email", async (req, res) => {
       },
     });
 
-    let emailsSent = 0;
-    let errors = [];
-
-    for (const member of members) {
-      let mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: member.email,
-        subject: "Important Message",
-        text: `Hello ${member.name},\n\nThis is a message from your team.`,
-      };
-
+    const emailPromises = data.map(async (item) => {
       try {
-        await transporter.sendMail(mailOptions);
+        const member = await Member.findById(item._id);
 
-        // Update email_sent field after successful email
+        if (!member) {
+          return { email: item.email, status: "failed", reason: "Member not found" };
+        }
+
+        let mailOptions = {
+          from: process.env.EMAIL_USER,
+          to: item.email,
+          subject: "Important Message",
+          text: `Hello ${member.name},\n\nThis is a message from your team.`,
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log("member name:", member.name )
+
         member.email_sent = true;
         await member.save();
 
-        emailsSent++;
-      } catch (emailError) {
-        console.error(`Error sending email to ${member.email}:`, emailError);
-        errors.push({ email: member.email, error: emailError.message });
+        return { email: item.email, status: "success" };
+      } catch (err) {
+        return { email: item.email, status: "failed", reason: err.message };
       }
-    }
+    });
+
+    // Run all in parallel, don't stop if one fails
+    const results = await Promise.allSettled(emailPromises);
+
+    // Extract resolved values (fulfilled or rejected)
+    const formattedResults = results.map((res) =>
+      res.status === "fulfilled" ? res.value : { status: "failed", reason: res.reason }
+    );
 
     res.json({
-      message: `Bulk email process completed. Emails sent: ${emailsSent}`,
-      errors: errors.length ? errors : null,
+      message: "Email process completed",
+      results: formattedResults,
     });
   } catch (error) {
-    console.error("Server error:", error);
+    console.error("Error in send-email route:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
+
 
 export default router;
