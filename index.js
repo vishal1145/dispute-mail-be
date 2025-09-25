@@ -1,25 +1,26 @@
 import express from "express";
-import userRoutes from "./routes/user.js";
-import connectDB from "./routes/server.js"; // renamed to db.js
+import userRoutes from "./Routes/user.js";
+import connectDB from "./Routes/server.js"; // renamed to db.js
 import cors from "cors";
 // import ExcelUpload from "./Routes/uploadExcel.js"
 
 const app = express();
-
-// Middleware
-app.use(cors({
-  origin: '*', // allow all origins
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
-app.use("/users/api", userRoutes);
-// app.use("/users/api", ExcelUpload);
+// Mount with leading slash
+app.use("/api/users", userRoutes);
+
+// (optional) health check
+app.get("/health", (_req, res) => res.send("ok"));
+
+// 404 handler (optional)
+app.use((req, res) => res.status(404).json({ error: "Not found" }));
 
 // Connect to MongoDB
+
+
 connectDB();
 
 // Start server

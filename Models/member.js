@@ -9,41 +9,34 @@ const memberSchema = new mongoose.Schema(
     },
     email: {
       type: String,
-      required: true,
-      unique: true,
       lowercase: true,
       match: [/^\S+@\S+\.\S+$/, "Please enter a valid email"],
     },
     state: {
       type: String,
-      required: true,
       trim: true,
     },
     number: {
       type: String,
-      required: true,
-      match: [/^[0-9]{10}$/, "Please enter a valid 10-digit mobile number"],
     },
     field: {
       type: String,
-      enum: [
-        "Mediation",
-        "Conciliation",
-        "Arbitration",
-        "Negotiation",
-        "Facilitation",
-        "Litigation",
-      ],
-      required: true,
+      // enum: [
+      //   "Mediation",
+      //   "Conciliation",
+      //   "Arbitration",
+      //   "Negotiation",
+      //   "Facilitation",
+      //   "Litigation",
+      //   "N/A"
+      // ],
     },
     licensedBy: {
       type: String,
-      required: true,
       trim: true,
     },
     licenseNumber: {
       type: String,
-      required: true,
       trim: true,
     },
     message: {
@@ -52,7 +45,7 @@ const memberSchema = new mongoose.Schema(
     },
     email_sent: {
       type: Boolean,
-      default: false, // <- default is now false
+      default: false,
     },
   },
   { timestamps: true }
