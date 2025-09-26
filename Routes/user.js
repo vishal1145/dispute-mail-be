@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import Member from "../models/member.js";
 import multer from "multer";
 import XLSX from "xlsx";
-
+import { sendMail } from "../config/email.js";
 import { parseExcel } from "../utils/excelHelper.js";
 
 dotenv.config();
@@ -200,14 +200,6 @@ router.put("/send-email", async (req, res) => {
   try {
     const { data } = req.body;
 
-    let transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
     const emailPromises = data.map(async (item) => {
       try {
         const member = await Member.findById(item._id);
@@ -256,18 +248,16 @@ R. Oayda
 Robert Oayda  
 Founder, CEO  
 Phone: +61 418 220 263  
-Email: robert@oayda.com`;
+        Email: robert@oayda.com`;
 
         let mailOptions = {
-          from: process.env.EMAIL_USER,
           to: item.email,
           subject: "Invitation to conduct dispute resolution cases",
-          html: messageBody.replace(/\n/g, "<br>"),
+          body: messageBody.replace(/\n/g, "<br>"),
         };
 
-        await transporter.sendMail(mailOptions);
-        console.log("Email sent to:", member.name);
-
+        await sendMail(mailOptions)
+ 
         member.email_sent = true;
         await member.save();
 
@@ -294,6 +284,7 @@ Email: robert@oayda.com`;
       message: "Email process completed",
       results: formattedResults,
     });
+    
   } catch (error) {
     console.error("Error in send-email route:", error);
     res.status(500).json({ message: "Server error", error: error.message });

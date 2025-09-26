@@ -1,6 +1,6 @@
 import express from "express";
 import userRoutes from "./Routes/user.js";
-import connectDB from "./Routes/server.js"; // renamed to db.js
+import connectDB from "./config/db.js";
 import cors from "cors";
 // import ExcelUpload from "./Routes/uploadExcel.js"
 
