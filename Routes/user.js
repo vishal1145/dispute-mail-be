@@ -5,6 +5,8 @@ import Member from "../models/member.js";
 import multer from "multer";
 import XLSX from "xlsx";
 
+import { parseExcel } from "../utils/excelHelper.js";
+
 dotenv.config();
 const router = express.Router();
 
@@ -36,28 +38,41 @@ router.get("/", async (req, res) => {
 // Edit user by ID
 router.put("/edit/:id", async (req, res) => {
   try {
-    const { id } = req.params; // get ID from URL
-    const { subject, body } = req.body; // destructure data to update
+    const { id } = req.params;
+    const { subject, body, email } = req.body;
 
-    // Find the member by ID
     const member = await Member.findById(id);
 
     if (!member) {
       return res.status(404).json({ message: "Member not found" });
     }
 
-    // Update the message fields
-    member.message = { subject, body };
+    // Update fields conditionally
+    if (email) {
+      member.email = email.trim(); // prevent trailing spaces
+    }
+
+    if (subject || body) {
+      member.message = {
+        subject: subject ?? member.message?.subject,
+        body: body ?? member.message?.body
+      };
+    }
 
     // Save the document
     await member.save();
 
-    res.json({ message: "Member updated successfully", data: member });
+    res.json({
+      message: "Member updated successfully",
+      data: member
+    });
   } catch (error) {
     console.error("Error updating member:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
+
+
 
 // Multer setup
 const storage = multer.memoryStorage();
@@ -76,97 +91,110 @@ router.post("/excel-upload", upload.single("excel_file"), async (req, res) => {
     }
 
     // Parse Excel file
-    const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(worksheet);
+    const {sheetName, headers, data} = parseExcel(req.file.buffer);
 
     if (!data.length) {
       return res
         .status(400)
         .json({ success: false, message: "Excel file is empty" });
-    }
+    }  
 
-    console.log("data first element", data[0]);
+    const skipped = [];
+    const inserted = [];
 
     // Validate and prepare data
     const members = data.map((row, index) => {
-      const { name, email, state, number, field, licensedBy, licenseNumber } =
-        row;
+      const {
+        name,
+        email,
+        number="",
+        field="N/A",
+        state = "",
+        licensedBy = "",
+        licenseNumber = ""
+      } = row;
 
-      if (
-        !name ||
-        !email ||
-        !state ||
-        !number ||
-        !field ||
-        !licensedBy ||
-        !licenseNumber
-      ) {
-        throw new Error(`Missing required fields at row ${index + 2}`);
-      }
 
       return {
-        name: name.toString().trim(),
-        email: email.toString().trim(),
-        state: state.toString().trim(),
-        number: number.toString().trim(),
-        field: field.toString().trim(),
-        licensedBy: licensedBy.toString().trim(),
-        licenseNumber: licenseNumber.toString().trim(),
+        name: name?.toString().trim(),
+        email: email?.toString().trim(),
+        state: state?.toString().trim(),
+        number: number?.toString().trim(),
+        field: field?.toString().trim(),
+        licensedBy: licensedBy?.toString().trim(),
+        licenseNumber: licenseNumber?.toString().trim(),
         message: {
           subject: "Invitation to conduct dispute resolution cases",
           body: `Dear ${name},
 
-Re: Invitation to conduct dispute resolution cases
+            Re: Invitation to conduct dispute resolution cases
 
-I would like to introduce myself and our Company to you, in the hope that we can be of mutual benefit to each other.
+            I would like to introduce myself and our Company to you, in the hope that we can be of mutual benefit to each other.
 
-We are a new and unique company in the dispute resolution industry. We are an aggregator of dispute cases. We intend to heavily advertise and market our services (mediation, conciliation, arbitration, facilitation and commercial negotiations) and distribute the work received to our ‘Panel’ of accredited dispute professionals such as yourself.
+            We are a new and unique company in the dispute resolution industry. We are an aggregator of dispute cases. We intend to heavily advertise and market our services (mediation, conciliation, arbitration, facilitation and commercial negotiations) and distribute the work received to our ‘Panel’ of accredited dispute professionals such as yourself.
 
-We are looking for experienced and currently accredited Mediators, Conciliators, Arbitrators and Negotiators to join our Panel.
+            We are looking for experienced and currently accredited Mediators, Conciliators, Arbitrators and Negotiators to join our Panel.
 
-How it Works
-• If you are qualified – join - via our website. www.disputesresolutions.com  (free and no obligation)
-• If you qualify you will become a member of our panel
-• You will have access to the ‘Jobs Schedule’ on the website, where we post all available jobs. We also notify you of new jobs by email.
-• If you see a job that you would like to do and is a suitable date for you, simply click on ‘Book’, the job will be assigned to you.
-• We will send you the ‘Intake’ information and relevant documents, as well as a summary.
-• Prior to the date of the scheduled job, you will be paid in full.
-• Payment to you is $900 for standard half-day (up to 4 hrs) and $1500 for a standard full day (up to 8 hrs)
-• All jobs are conducted on-line via Zoom.
-• There are no obligations as to how many jobs you do or which jobs you select. You are an independent contractor not an employee of the company.
+            How it Works
+            • If you are qualified – join - via our website. www.disputesresolutions.com  (free and no obligation)
+            • If you qualify you will become a member of our panel
+            • You will have access to the ‘Jobs Schedule’ on the website, where we post all available jobs. We also notify you of new jobs by email.
+            • If you see a job that you would like to do and is a suitable date for you, simply click on ‘Book’, the job will be assigned to you.
+            • We will send you the ‘Intake’ information and relevant documents, as well as a summary.
+            • Prior to the date of the scheduled job, you will be paid in full.
+            • Payment to you is $900 for standard half-day (up to 4 hrs) and $1500 for a standard full day (up to 8 hrs)
+            • All jobs are conducted on-line via Zoom.
+            • There are no obligations as to how many jobs you do or which jobs you select. You are an independent contractor not an employee of the company.
 
-Note: 
-(a) You have no requirement to do any intake work. A summary, plus necessary information and documents will be sent to you.
-(b) You must not ‘Book’ a job unless you are sure you are available on that date and are able to do the job. No cancellations accepted (except for emergencies).
+            Note: 
+            (a) You have no requirement to do any intake work. A summary, plus necessary information and documents will be sent to you.
+            (b) You must not ‘Book’ a job unless you are sure you are available on that date and are able to do the job. No cancellations accepted (except for emergencies).
 
-More information about our company and our services can be seen at our website www.disputesresolutions.com. To join or view our Panel details, scroll to the bottom of the Home-page on the website and see ‘Panel Members – Join’.
+            More information about our company and our services can be seen at our website www.disputesresolutions.com. To join or view our Panel details, scroll to the bottom of the Home-page on the website and see ‘Panel Members – Join’.
 
-I would be happy to answer any further questions you might have by phone or email.
+            I would be happy to answer any further questions you might have by phone or email.
 
-Sincerely,
-R. Oayda
-Robert Oayda  
-Founder, CEO  
-Phone: +61 418 220 263  
-Email: robert@oayda.com`,
+            Sincerely,
+            R. Oayda
+            Robert Oayda  
+            Founder, CEO  
+            Phone: +61 418 220 263  
+            Email: robert@oayda.com`,
         },
       };
     });
 
-    await Member.insertMany(members);
+    ///check each email one by one if exit skip 
+    for (const m of members) {
+      // normalize email safely
+      const email = m.email ? m.email.toString().trim().toLowerCase() : null;
+      if (!email) {
+        skipped.push({ ...m, reason: "Missing email" });
+        continue;
+      }
+
+      // check if already exists
+      const existing = await Member.findOne({ email });
+      if (existing) {
+        skipped.push({ ...m, reason: "Email already exists" });
+      } else {
+        const newMember = await Member.create({ ...m, email });
+        inserted.push(newMember);
+      }
+    }
 
     res.json({
       success: true,
-      message: "Excel file uploaded successfully",
+      message: `Inserted ${inserted.length} rows, Skipped ${skipped.length} rows, Out of ${members.length}`,
       count: members.length,
     });
+
   } catch (error) {
     console.error("Error processing Excel file:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
+
 
 router.put("/send-email", async (req, res) => {
   try {
