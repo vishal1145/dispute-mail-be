@@ -1,7 +1,7 @@
 import express from "express";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
-import Member from "../models/member.js";
+import Member from "../Models/member.js";
 import multer from "multer";
 import XLSX from "xlsx";
 import { sendMail } from "../config/email.js";
@@ -155,11 +155,16 @@ router.post("/excel-upload", upload.single("excel_file"), async (req, res) => {
             I would be happy to answer any further questions you might have by phone or email.
 
             Sincerely,
-            R. Oayda
-            Robert Oayda  
-            Founder, CEO  
-            Phone: +61 418 220 263  
-            Email: robert@oayda.com`,
+
+            Robert Oayda
+            <span style="color: #6e6e6e;">(Accredited Mediator)</span>
+            <span style="color: #6e6e6e;">Founder, CEO</span>
+
+            <img src="https://disputesresolutions.com/wp-content/uploads/2024/05/DR-Logo-removebg-preview-1.png" alt="Robert Oayda" width="100" height="100">
+
+            <span style="color: #6e6e6e;">Phone:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+61 418 220 263</span>
+            <span style="color: #6e6e6e;">Email:</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #2c66dd;">robert@oayda.com</span> 
+            <span style="color: #6e6e6e;">Website:</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #2c66dd;"><a href="https://disputesresolutions.com">www.disputesresolutions.com</a></span>`,
         },
       };
     });
@@ -212,7 +217,7 @@ router.put("/send-email", async (req, res) => {
           };
         }
 
-        const name = member.name.toString().trim();
+        const name = item.name.toString().trim().split(' ')[0];
 
         const messageBody = `Dear ${name},
 
@@ -244,11 +249,16 @@ More information about our company and our services can be seen at our website w
 I would be happy to answer any further questions you might have by phone or email.
 
 Sincerely,
-R. Oayda
-Robert Oayda  
-Founder, CEO  
-Phone: +61 418 220 263  
-        Email: robert@oayda.com`;
+
+Robert Oayda
+<span style="color: #6e6e6e;">(Accredited Mediator)</span>
+<span style="color: #6e6e6e;">Founder, CEO</span>
+
+<img src="https://disputesresolutions.com/wp-content/uploads/2024/05/DR-Logo-removebg-preview-1.png" alt="Robert Oayda" width="100" height="100">
+
+<span style="color: #6e6e6e;">Phone:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+61 418 220 263</span>
+<span style="color: #6e6e6e;">Email:</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #2c66dd;">robert@oayda.com</span> 
+<span style="color: #6e6e6e;">Website:</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #2c66dd;"><a href="https://disputesresolutions.com">www.disputesresolutions.com</a></span>`;
 
         let mailOptions = {
           to: item.email,
