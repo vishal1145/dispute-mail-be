@@ -165,8 +165,8 @@ router.post("/excel-upload", upload.single("excel_file"), async (req, res) => {
       <img src="https://disputesresolutions.com/wp-content/uploads/2024/05/DR-Logo-removebg-preview-1.png" alt="Robert Oayda" width="100" height="100"><br><br>
 
       <span style="color: #6e6e6e;">Phone:&nbsp;&nbsp;&nbsp;+61 418 220 263</span><br>
-      <span style="color: #6e6e6e;">Email:</span> <span style="color: #2c66dd;">robert@oayda.com</span><br>
-      <span style="color: #6e6e6e;">Website:</span> <span style="color: #2c66dd;"><a href="https://disputesresolutions.com">www.disputesresolutions.com</a></span>`,
+      <span style="color: #6e6e6e;">Email:&nbsp;&nbsp;&nbsp;</span> <span style="color: #2c66dd;">robert@oayda.com</span><br>
+      <span style="color: #6e6e6e;">Website:&nbsp;&nbsp;&nbsp;</span> <span style="color: #2c66dd; cursor: pointer;"><a href="https://disputesresolutions.com">www.disputesresolutions.com</a></span>`,
         },
       };
     });
