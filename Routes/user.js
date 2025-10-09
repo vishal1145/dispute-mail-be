@@ -116,7 +116,7 @@ router.post("/excel-upload", upload.single("excel_file"), async (req, res) => {
 
 
       return {
-        name: name?.toString().trim(),
+        name: name.toString().trim().split(' ')[0],
         email: email?.toString().trim(),
         state: state?.toString().trim(),
         number: number?.toString().trim(),
